@@ -1,9 +1,14 @@
-import express from 'express'
-import cors from 'cors'
-import dotenv from 'dotenv'
-dotenv.config();
-const app =express()
-app.use(cors())
-app.use(express.json());
+import express from 'express';
+import cors from 'cors';
+import taskRoutes from './src/routes/taskRoutes.js';
 
-export {app}
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json()); // Allows JSON data in requests
+
+// Routes
+app.use('/api', taskRoutes); // All task routes start with /api
+
+export default app;
