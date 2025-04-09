@@ -13,6 +13,10 @@ import mongoose from "mongoose";
         type:String,
         required:true,
     },
+    avatar:{
+        public_id: String,
+        url: String
+    }
     
  },{
     timestamps:true
