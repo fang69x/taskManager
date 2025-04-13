@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../service/api_service.dart';
+// Import the network debug utility if you created it
+// import '../utils/network_debug.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -22,9 +24,17 @@ class _LoginPageState extends State<LoginPage> {
         _isLoading = true;
         _errorMessage = '';
       });
+
       try {
+        print('Attempting to login with:');
+        print('Email: ${_emailController.text}');
+        print('Password length: ${_passwordController.text.length} characters');
+
         final result = await _apiService.loginUser(
             email: _emailController.text, password: _passwordController.text);
+
+        print('Login response: $result');
+
         if (result.containsKey('error') ||
             result.containsKey('message') &&
                 result['message'] != 'Login successful') {
@@ -32,16 +42,33 @@ class _LoginPageState extends State<LoginPage> {
             _errorMessage =
                 result['error'] ?? result['message'] ?? 'Login failed';
           });
+          print('Login error: $_errorMessage');
         } else {
+          print('Login successful, navigating to tasks screen');
           // Navigate to tasks screen
           Navigator.pushReplacementNamed(context, '/tasks');
         }
       } catch (e) {
+        print('Login exception: $e');
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      } finally {
         setState(() {
           _isLoading = false;
         });
       }
+    } else {
+      print('Form validation failed');
     }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -69,6 +96,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               SizedBox(height: 40),
               TextFormField(
+                controller: _emailController,
                 decoration: InputDecoration(
                   labelText: 'Email',
                   border: OutlineInputBorder(),
@@ -78,12 +106,15 @@ class _LoginPageState extends State<LoginPage> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your email';
                   }
+                  if (!value.contains('@')) {
+                    return 'Please enter a valid email';
+                  }
                   return null;
                 },
-                onChanged: (value) => _emailController.text = value,
               ),
               SizedBox(height: 16),
               TextFormField(
+                controller: _passwordController,
                 decoration: InputDecoration(
                   labelText: 'Password',
                   border: OutlineInputBorder(),
@@ -95,7 +126,6 @@ class _LoginPageState extends State<LoginPage> {
                   }
                   return null;
                 },
-                onChanged: (value) => _passwordController.text = value,
               ),
               SizedBox(height: 24),
               if (_errorMessage.isNotEmpty)
@@ -123,6 +153,16 @@ class _LoginPageState extends State<LoginPage> {
                 },
                 child: Text('New user? Register'),
               ),
+
+              // Network Debug Button (uncomment if you created the NetworkDebug utility)
+              /*
+              SizedBox(height: 24),
+              OutlinedButton.icon(
+                icon: Icon(Icons.network_check),
+                label: Text('Check Network'),
+                onPressed: () => NetworkDebug.showNetworkInfo(context),
+              ),
+              */
             ],
           ),
         ),
