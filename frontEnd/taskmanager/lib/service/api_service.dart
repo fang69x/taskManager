@@ -8,7 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class ApiService {
   // Replace with your API base URL
   final String baseUrl =
-      'http://10.0.2.2:3000'; // Use your machine's IP for local development
+      'http://10.0.2.2:3000/api'; // Use your machine's IP for local development
   final storage = FlutterSecureStorage();
 
   // Get auth token
@@ -27,6 +27,7 @@ class ApiService {
   }
 
   // User Registration with Avatar
+
   Future<Map<String, dynamic>> registerUser({
     required String name,
     required String email,
@@ -50,26 +51,49 @@ class ApiService {
         ));
       }
 
-      var response = await request.send();
-      var responseData = await response.stream.bytesToString();
-      var data = json.decode(responseData);
+      // Add headers if required by your API
+      request.headers['Content-Type'] = 'multipart/form-data';
+
+      // Print request details for debugging
+      print('Sending registration request to: ${request.url}');
+      print('Request fields: ${request.fields}');
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      // Print response for debugging
+      print('Registration response status: ${response.statusCode}');
+      print('Registration response body: ${response.body}');
+
+      var data = json.decode(response.body);
 
       if (response.statusCode == 201) {
-        await setToken(data['token']);
+        if (data.containsKey('token')) {
+          await setToken(data['token']);
+          print('Token saved: ${data['token']}');
+        } else {
+          print('Warning: No token found in response');
+        }
       }
 
       return data;
     } catch (e) {
+      print('Registration error: $e');
       return {'error': e.toString()};
     }
   }
 
   // User Login
+  // Update the loginUser method in api_service.dart
+
   Future<Map<String, dynamic>> loginUser({
     required String email,
     required String password,
   }) async {
     try {
+      print('Login request to: $baseUrl/auth/login');
+      print('Email: $email');
+
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login'),
         headers: {'Content-Type': 'application/json'},
@@ -79,14 +103,26 @@ class ApiService {
         }),
       );
 
+      print('Login response status: ${response.statusCode}');
+      print('Login response body: ${response.body}');
+
       var data = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        await setToken(data['token']);
+        if (data.containsKey('token')) {
+          await setToken(data['token']);
+          print(
+              'Token saved successfully: ${data['token'].substring(0, 10)}...');
+        } else {
+          print('Warning: No token found in successful login response');
+        }
+      } else {
+        print('Login failed with status code: ${response.statusCode}');
       }
 
       return data;
     } catch (e) {
+      print('Login error: $e');
       return {'error': e.toString()};
     }
   }
