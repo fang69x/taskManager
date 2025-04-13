@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
                 ),
               );
             }
-            return snapshot.data != null ? TaskScreen() : LoginPage();
+            return snapshot.data != null ? TaskScreen() : SignUpPage();
           }),
       routes: {
         '/login': (context) => LoginPage(),

@@ -1,31 +1,32 @@
+// lib/services/api_service.dart
+
 import 'dart:convert';
 import 'dart:io';
-
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
-  final String baseUrl = 'http://localhost:3000';
-
-  // 'for emulator http://10.0.2.2:3000'
+  // Replace with your API base URL
+  final String baseUrl =
+      'http://10.0.2.2:3000'; // Use your machine's IP for local development
   final storage = FlutterSecureStorage();
 
-// get auth token
+  // Get auth token
   Future<String?> getToken() async {
     return await storage.read(key: 'auth_token');
   }
 
-//set auth token
+  // Set auth token
   Future<void> setToken(String token) async {
     await storage.write(key: 'auth_token', value: token);
   }
 
-// clear auth token (logout)
+  // Clear auth token (logout)
   Future<void> clearToken() async {
     await storage.delete(key: 'auth_token');
   }
 
-  //User registration with avatar
+  // User Registration with Avatar
   Future<Map<String, dynamic>> registerUser({
     required String name,
     required String email,
@@ -34,29 +35,32 @@ class ApiService {
   }) async {
     try {
       var request =
-          http.MultipartRequest('POST', Uri.parse('$baseUrl/auth/signUp'));
+          http.MultipartRequest('POST', Uri.parse('$baseUrl/auth/signup'));
 
-      // add text fields
+      // Add text fields
       request.fields['name'] = name;
       request.fields['email'] = email;
       request.fields['password'] = password;
 
-// add avatar
+      // Add avatar if provided
       if (avatarImage != null) {
         request.files.add(await http.MultipartFile.fromPath(
           'avatar',
           avatarImage.path,
         ));
       }
+
       var response = await request.send();
       var responseData = await response.stream.bytesToString();
       var data = json.decode(responseData);
+
       if (response.statusCode == 201) {
         await setToken(data['token']);
       }
+
       return data;
     } catch (e) {
-      return {'error ': e.toString()};
+      return {'error': e.toString()};
     }
   }
 
@@ -68,26 +72,55 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login'),
-        headers: {'Content-type': 'application/json'},
+        headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': email,
           'password': password,
         }),
       );
+
       var data = json.decode(response.body);
+
       if (response.statusCode == 200) {
         await setToken(data['token']);
       }
+
       return data;
     } catch (e) {
       return {'error': e.toString()};
     }
   }
 
-  //get user profile
+  // Update User Avatar
+  Future<Map<String, dynamic>> updateAvatar(File avatarImage) async {
+    try {
+      final token = await getToken();
+
+      var request = http.MultipartRequest(
+        'PUT',
+        Uri.parse('$baseUrl/auth/avatar'),
+      );
+
+      request.headers['Authorization'] = 'Bearer $token';
+      request.files.add(await http.MultipartFile.fromPath(
+        'avatar',
+        avatarImage.path,
+      ));
+
+      var response = await request.send();
+      var responseData = await response.stream.bytesToString();
+
+      return json.decode(responseData);
+    } catch (e) {
+      return {'error': e.toString()};
+    }
+  }
+
+  // Get User Profile
   Future<Map<String, dynamic>> getUserProfile() async {
     try {
       final token = await getToken();
+
       final response = await http.get(
         Uri.parse('$baseUrl/auth/profile'),
         headers: {
@@ -95,16 +128,18 @@ class ApiService {
           'Authorization': 'Bearer $token',
         },
       );
+
       return json.decode(response.body);
     } catch (e) {
       return {'error': e.toString()};
     }
   }
 
-// get all tasks
+  // Get All Tasks
   Future<List<dynamic>> getAllTasks() async {
     try {
       final token = await getToken();
+
       final response = await http.get(
         Uri.parse('$baseUrl/tasks/list'),
         headers: {
@@ -112,6 +147,7 @@ class ApiService {
           'Authorization': 'Bearer $token',
         },
       );
+
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
@@ -121,18 +157,19 @@ class ApiService {
       return [];
     }
   }
-  //create task
 
+  // Create Task
   Future<Map<String, dynamic>> createTask({
     required String title,
     required String description,
   }) async {
     try {
       final token = await getToken();
+
       final response = await http.post(
         Uri.parse('$baseUrl/tasks/create'),
         headers: {
-          'Content-Type': 'appilcation/json',
+          'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
         body: json.encode({
@@ -140,43 +177,49 @@ class ApiService {
           'description': description,
         }),
       );
+
       return json.decode(response.body);
     } catch (e) {
       return {'error': e.toString()};
     }
   }
 
-//update task
+  // Update Task
   Future<Map<String, dynamic>> updateTask({
     required String id,
     required Map<String, dynamic> taskData,
   }) async {
     try {
       final token = await getToken();
+
       final response = await http.put(
-        Uri.parse('$baseUrl/update/$id'),
+        Uri.parse('$baseUrl/tasks/update/$id'),
         headers: {
-          'Content-Type': 'appilcation/json',
+          'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
         body: json.encode(taskData),
       );
+
       return json.decode(response.body);
     } catch (e) {
       return {'error': e.toString()};
     }
   }
 
-//Delete Task
-
+  // Delete Task
   Future<Map<String, dynamic>> deleteTask(String id) async {
     try {
       final token = await getToken();
-      final response =
-          await http.delete(Uri.parse('$baseUrl/tasks/remove/$id'), headers: {
-        'Content-Type': 'appilcation/json',
-        'Authorization': 'Bearer $token',
-      });
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/tasks/remove/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
       return json.decode(response.body);
     } catch (e) {
       return {'error': e.toString()};

@@ -109,12 +109,12 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ElevatedButton(
                 onPressed: _isLoading ? null : _login,
-                child: _isLoading
-                    ? CircularProgressIndicator(color: Colors.white)
-                    : Text('Login'),
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 16),
                 ),
+                child: _isLoading
+                    ? CircularProgressIndicator(color: Colors.white)
+                    : Text('Login'),
               ),
               SizedBox(height: 16),
               TextButton(
