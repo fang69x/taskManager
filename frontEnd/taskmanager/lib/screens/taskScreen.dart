@@ -92,10 +92,14 @@ class _TaskScreenState extends State<TaskScreen> {
               accountName: Text(_userProfile['name'] ?? 'User'),
               accountEmail: Text(_userProfile['email'] ?? ''),
               currentAccountPicture: CircleAvatar(
-                backgroundImage: _userProfile['avatar'] != null
-                    ? CachedNetworkImageProvider(_userProfile['avatar'])
+                backgroundImage: _userProfile['avatar'] != null &&
+                        _userProfile['avatar'] is Map &&
+                        _userProfile['avatar']['url'] != null
+                    ? CachedNetworkImageProvider(_userProfile['avatar']['url'])
                     : null,
-                child: _userProfile['avatar'] == null
+                child: (_userProfile['avatar'] == null ||
+                        !(_userProfile['avatar'] is Map) ||
+                        _userProfile['avatar']['url'] == null)
                     ? Text(
                         (_userProfile['name'] ?? 'U')[0].toUpperCase(),
                         style: TextStyle(fontSize: 24),
